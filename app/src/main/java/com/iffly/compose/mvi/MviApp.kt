@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.asLiveData
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -16,41 +16,39 @@ import com.iffly.compose.Content1
 import com.iffly.compose.Content2
 import com.iffly.compose.mvvm.viewModelOfNav
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MVIViewModel : ViewModel() {
-    val viewState = MutableLiveData(ViewState())
     val userIntent = Channel<UiAction>(Channel.UNLIMITED)
+    val viewState: LiveData<ViewState> = handleAction()
 
-    init {
-        handleAction()
-    }
 
-    private fun add(num: Int) {
-        viewState.value?.let {
-            viewState.postValue(it.copy(count = it.count + 1))
-        }
-
-    }
-
-    private fun reduce(num: Int) {
-        viewState.value?.let {
-            viewState.postValue(it.copy(count = it.count - 1))
+    private fun add(num: Int): ViewState {
+        return if (viewState.value != null) {
+            viewState.value!!.copy(viewState.value!!.count + num)
+        } else {
+            ViewState()
         }
     }
 
-    private fun handleAction() {
-        viewModelScope.launch {
-            userIntent.consumeAsFlow().collect {
-                when (it) {
-                    is UiAction.AddAction -> add(it.num)
-                    is UiAction.ReduceAction -> reduce(it.num)
-                }
+    private fun reduce(num: Int): ViewState {
+        return if (viewState.value != null) {
+            viewState.value!!.copy(viewState.value!!.count - num)
+        } else {
+            ViewState()
+        }
+    }
+
+    private fun handleAction() =
+        userIntent.consumeAsFlow().map {
+            when (it) {
+                is UiAction.AddAction -> add(it.num)
+                is UiAction.ReduceAction -> reduce(it.num)
             }
-        }
-    }
+        }.asLiveData()
+
 
     data class ViewState(val count: Int = 1)
     sealed class UiAction {
