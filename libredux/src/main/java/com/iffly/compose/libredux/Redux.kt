@@ -5,10 +5,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
@@ -20,17 +18,11 @@ class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
             list.forEach {
                 _reducerMap[it.actionClass] = Channel(Channel.UNLIMITED)
                 _stateMap[it.stateClass] =
-                    _reducerMap[it.actionClass]!!.consumeAsFlow().flatMapConcat { action ->
+                    _reducerMap[it.actionClass]!!.consumeAsFlow().map { action ->
                         if (_stateMap[it.stateClass]?.value != null)
                             it.reduce(_stateMap[it.stateClass]!!.value!!, action = action)
                         else
-                            flow {
-                                try {
-                                    emit(it.stateClass.newInstance())
-                                } catch (e: InstantiationException) {
-                                    throw IllegalArgumentException("${it.stateClass} must provide zero argument constructor used to init state")
-                                }
-                            }
+                            it.stateClass.newInstance()
                     }.asLiveData()
                 //send a message to init state
                 _reducerMap[it.actionClass]!!.send("")
@@ -57,8 +49,7 @@ class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
 
 
 abstract class Reducer<S, A>(val stateClass: Class<S>, val actionClass: Class<A>) {
-    abstract  fun reduce(state: S, action: A): Flow<S>
-
+    abstract suspend fun reduce(state: S, action: A): S
 }
 
 

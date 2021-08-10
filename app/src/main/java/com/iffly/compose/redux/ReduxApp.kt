@@ -43,13 +43,11 @@ fun Screen1(
     val state: CountState by s.getState(CountState::class.java)
         .observeAsState(CountState(1))
 
-
     Content1(count = state.count,
         { navController.navigate("screen2") }
     ) {
         s.dispatch(CountAction.provideAddAction(1))
     }
-
 }
 
 
