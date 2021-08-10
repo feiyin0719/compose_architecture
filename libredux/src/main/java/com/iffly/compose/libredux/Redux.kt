@@ -4,44 +4,50 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
-    private val _reducerMap = mutableMapOf<Class<*>, Reducer<Any, Any>>()
-    private val _stateMap = mutableMapOf<Any, MutableLiveData<Any>>()
+    private val _reducerMap = mutableMapOf<Class<*>, Channel<Any>>()
+    private val _stateMap = mutableMapOf<Any, LiveData<Any>>()
 
     init {
-        list.forEach {
-            _reducerMap[it.actionClass] = it
-            try {
-                _stateMap[it.stateClass] = MutableLiveData(it.stateClass.newInstance())
-            } catch (e: InstantiationException) {
-                throw IllegalArgumentException("${it.stateClass} must provide zero argument constructor used to init state")
+        viewModelScope.launch {
+            list.forEach {
+                _reducerMap[it.actionClass] = Channel(Channel.UNLIMITED)
+                _stateMap[it.stateClass] =
+                    _reducerMap[it.actionClass]!!.consumeAsFlow().flatMapConcat { action ->
+                        if (_stateMap[it.stateClass]?.value != null)
+                            it.reduce(_stateMap[it.stateClass]!!.value!!, action = action)
+                        else
+                            flow {
+                                try {
+                                    emit(it.stateClass.newInstance())
+                                } catch (e: InstantiationException) {
+                                    throw IllegalArgumentException("${it.stateClass} must provide zero argument constructor used to init state")
+                                }
+                            }
+                    }.asLiveData()
+                //send a message to init state
+                _reducerMap[it.actionClass]!!.send("")
+
             }
         }
+
     }
 
     fun dispatch(action: Any) {
         viewModelScope.launch {
-            val reducer = _reducerMap[action::class.java]
-            reducer?.let {
-                val state = _stateMap[it.stateClass]
-                state?.let { _state ->
-                    _state.value?.let { _value ->
-                        val newState =
-                            withContext(viewModelScope.coroutineContext) {
-                                it.reduce(
-                                    _value,
-                                    action = action
-                                )
-                            }
-                        _state.postValue(newState)
-                    }
-                }
-            }
+            _reducerMap[action::class.java]!!.send(action)
         }
+    }
 
+    suspend fun dispatchWithCoroutine(action: Any) {
+        _reducerMap[action::class.java]!!.send(action)
     }
 
     fun <T> getState(stateClass: Class<T>): MutableLiveData<T> {
@@ -51,7 +57,7 @@ class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
 
 
 abstract class Reducer<S, A>(val stateClass: Class<S>, val actionClass: Class<A>) {
-    abstract suspend fun reduce(state: S, action: A): S
+    abstract  fun reduce(state: S, action: A): Flow<S>
 
 }
 
