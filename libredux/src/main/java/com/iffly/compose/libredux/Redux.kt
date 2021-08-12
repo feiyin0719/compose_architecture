@@ -5,10 +5,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
@@ -20,7 +17,7 @@ class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
             list.forEach {
                 _reducerMap[it.actionClass] = Channel(Channel.UNLIMITED)
                 _stateMap[it.stateClass] =
-                    _reducerMap[it.actionClass]!!.consumeAsFlow().flatMapConcat { action ->
+                    _reducerMap[it.actionClass]!!.receiveAsFlow().flatMapConcat { action ->
                         if (_stateMap[it.stateClass]?.value != null)
                             it.reduce(_stateMap[it.stateClass]!!.value!!, action = action)
                         else
