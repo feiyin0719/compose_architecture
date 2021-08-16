@@ -1,6 +1,5 @@
 package com.iffly.compose.redux.ui
 
-import android.util.Log
 import com.iffly.compose.libredux.Reducer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -42,13 +41,30 @@ class CountReducer :
                     emit(countState.copy(count = countState.count + action.data))
                 else
                     emit(countState.copy(count = countState.count - action.data))
-                kotlinx.coroutines.delay(1000)
-                emit(countState.copy(count = countState.count + 3))
             }
         }.flowOn(Dispatchers.IO)
     }
 
 
+}
+
+
+data class DepState(val depCount: Int = 0) {
+
+    companion object {
+        fun transform(countState: CountState): DepState {
+            return DepState(countState.count * 2)
+        }
+    }
+}
+
+data class DepState2(val depCount: Int = 0) {
+
+    companion object {
+        fun transform(countState: CountState, depState: DepState): DepState2 {
+            return DepState2(countState.count + depState.depCount)
+        }
+    }
 }
 
 

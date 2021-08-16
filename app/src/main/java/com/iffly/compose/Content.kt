@@ -11,13 +11,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
-fun Content1(count: Int, click: () -> Unit, click1: () -> Unit) {
+fun Content1(
+    count: Int,
+    depCount: Int = 0,
+    depCount2: Int = 0,
+    click: () -> Unit = {},
+    click1: () -> Unit = {}
+) {
     Column(
         Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "The count is $count")
+        Text(text = "The count is $count-$depCount-$depCount2")
         Button(onClick = click) {
             Text(text = "goto screen2")
         }

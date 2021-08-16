@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.iffly.compose.mvi.MVIActivity
 import com.iffly.compose.mvvm.MVVMActivity
 import com.iffly.compose.redux.ReduxActivity
 
@@ -46,7 +47,7 @@ fun Content() {
         }
 
         Button(onClick = {
-            context.startActivity(Intent(context, MVVMActivity::class.java))
+            context.startActivity(Intent(context, MVIActivity::class.java))
         }) {
             Text(text = "goto MVI app")
         }

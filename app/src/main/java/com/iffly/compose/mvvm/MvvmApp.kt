@@ -41,7 +41,7 @@ fun Screen1(
     val viewModel: MvvmViewModel = viewModelOfNav(navController = navController)
     val count by viewModel.countState.observeAsState(0)
 
-    Content1(count = count,
+    Content1(count = count, depCount = 0, 0,
         { navController.navigate("screen2") }
     ) {
         viewModel.add(1)

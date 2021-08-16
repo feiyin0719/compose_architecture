@@ -1,6 +1,7 @@
 package com.iffly.compose.redux.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.NavController
@@ -15,7 +16,12 @@ import com.iffly.compose.libredux.storeViewModel
 
 @Composable
 fun ReduxApp() {
-    storeViewModel(listOf(CountReducer()))
+    val s = storeViewModel(listOf(CountReducer()))
+    LaunchedEffect(key1 = true) {
+        s.depState(DepState::transform)
+        s.depState(DepState2::transform)
+    }
+
     NavGraph()
 }
 
@@ -42,9 +48,9 @@ fun Screen1(
     val s = storeViewModel()
     val state: CountState by s.getState(CountState::class.java)
         .observeAsState(CountState(1))
-
-
-    Content1(count = state.count,
+    val depState: DepState by s.getState(DepState::class.java).observeAsState(DepState())
+    val depState2: DepState2 by s.getState(DepState2::class.java).observeAsState(DepState2())
+    Content1(count = state.count, depCount = depState.depCount, depCount2 = depState2.depCount,
         { navController.navigate("screen2") }
     ) {
         s.dispatch(CountAction.provideAddAction(1))

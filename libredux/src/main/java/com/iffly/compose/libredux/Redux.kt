@@ -4,19 +4,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
     private val _reducerMap = mutableMapOf<Class<*>, Channel<Any>>()
-    private val _stateMap = mutableMapOf<Any, LiveData<Any>>()
+    public val _sharedMap = mutableMapOf<Any, SharedFlow<Any>>()
+    public val _stateMap = mutableMapOf<Any, LiveData<Any>>()
+
 
     init {
         viewModelScope.launch {
             list.forEach {
                 _reducerMap[it.actionClass] = Channel(Channel.UNLIMITED)
-                _stateMap[it.stateClass] =
+                _sharedMap[it.stateClass] =
                     _reducerMap[it.actionClass]!!.receiveAsFlow().flatMapConcat { action ->
                         if (_stateMap[it.stateClass]?.value != null)
                             it.reduce(_stateMap[it.stateClass]!!.value!!, action = action)
@@ -28,7 +31,10 @@ class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
                                     throw IllegalArgumentException("${it.stateClass} must provide zero argument constructor used to init state")
                                 }
                             }
-                    }.asLiveData()
+                    }.shareIn(viewModelScope, SharingStarted.Lazily, 1)
+
+                _stateMap[it.stateClass] = _sharedMap[it.stateClass]!!
+                    .asLiveData()
                 //send a message to init state
                 _reducerMap[it.actionClass]!!.send("")
 
@@ -43,6 +49,33 @@ class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
         }
     }
 
+    inline fun <reified T, reified R> depState(
+        crossinline transform: (T) -> R,
+        scope: CoroutineScope = viewModelScope
+    ) {
+        _sharedMap[R::class.java] = _sharedMap[T::class.java]!!
+            .map {
+                transform(it as T)
+            }.shareIn(scope = scope, SharingStarted.Lazily, 1) as SharedFlow<Any>
+        _stateMap[R::class.java] =
+            _sharedMap[R::class.java]!!.asLiveData(context = scope.coroutineContext)
+    }
+
+
+    inline fun <reified T1, reified T2, reified R> depState(
+        crossinline transform: (T1, T2) -> R,
+        scope: CoroutineScope = viewModelScope
+    ) {
+
+        _sharedMap[R::class.java] = _sharedMap[T1::class.java]!!.zip(_sharedMap[T2::class.java]!!)
+        { t1, t2 ->
+            transform(t1 as T1, t2 as T2)
+        }.shareIn(scope = scope, SharingStarted.Lazily, 1) as SharedFlow<Any>
+        _stateMap[R::class.java] = _sharedMap[R::class.java]!!
+            .asLiveData(context = scope.coroutineContext)
+    }
+
+
     suspend fun dispatchWithCoroutine(action: Any) {
         _reducerMap[action::class.java]!!.send(action)
     }
@@ -54,7 +87,7 @@ class StoreViewModel(val list: List<Reducer<Any, Any>>) : ViewModel() {
 
 
 abstract class Reducer<S, A>(val stateClass: Class<S>, val actionClass: Class<A>) {
-    abstract  fun reduce(state: S, action: A): Flow<S>
+    abstract fun reduce(state: S, action: A): Flow<S>
 
 }
 
