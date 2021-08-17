@@ -14,7 +14,6 @@ import androidx.navigation.compose.rememberNavController
 import com.iffly.compose.Content1
 import com.iffly.compose.Content2
 import com.iffly.compose.mvvm.viewModelOfNav
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -22,19 +21,6 @@ import kotlinx.coroutines.launch
 abstract class DepViewModel<T> : ViewModel() {
 
     abstract fun getDepShareFlow(): SharedFlow<T>
-
-    fun <R> depState(
-        transform: (T) -> R,
-        initValue: R,
-        scope: CoroutineScope = viewModelScope
-    ): StateFlow<R> {
-        return getDepShareFlow().map {
-            transform.invoke(it)
-        }.stateIn(
-            scope, SharingStarted.Lazily,
-            initialValue = initValue
-        )
-    }
 }
 
 
@@ -48,19 +34,11 @@ class MVIViewModel : DepViewModel<MVIViewModel.ViewState>() {
 
 
     private fun add(num: Int): ViewState {
-        return if (viewState.value != null) {
-            viewState.value!!.copy(viewState.value!!.count + num)
-        } else {
-            ViewState()
-        }
+        return viewState.value.copy(count = viewState.value.count + num)
     }
 
     private fun reduce(num: Int): ViewState {
-        return if (viewState.value != null) {
-            viewState.value!!.copy(viewState.value!!.count - num)
-        } else {
-            ViewState()
-        }
+        return viewState.value.copy(count = viewState.value.count - num)
     }
 
     private fun handleAction() =
@@ -71,11 +49,12 @@ class MVIViewModel : DepViewModel<MVIViewModel.ViewState>() {
             }
         }.shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    fun depCount() = depState({
-        it.count * 2
-    }, 0)
 
-    data class ViewState(val count: Int = 0)
+    data class ViewState(val count: Int = 0) {
+        val depCount: Int
+            get() = count * 2
+    }
+
     sealed class UiAction {
         class AddAction(val num: Int) : UiAction()
         class ReduceAction(val num: Int) : UiAction()
@@ -112,10 +91,9 @@ fun Screen1(
 ) {
     val viewModel: MVIViewModel = viewModelOfNav(navController = navController)
     val viewState by viewModel.viewState.collectAsState(MVIViewModel.ViewState())
-    val depCount by viewModel.depCount().collectAsState()
 
     val coroutine = rememberCoroutineScope()
-    Content1(viewState.count, depCount, 0,
+    Content1(viewState.count, viewState.depCount, 0,
         { navController.navigate("screen2") }
     ) {
         coroutine.launch {
