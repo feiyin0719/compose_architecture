@@ -9,12 +9,27 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class StoreViewModel(private val list: List<Reducer<Any, Any>>) : ViewModel() {
+class StoreViewModel(
+    private val list: List<Reducer<Any, Any>>,
+    middleWares: MutableList<MiddleWare> = mutableListOf()
+) : MiddleWare, ViewModel() {
     private val _reducerMap = mutableMapOf<Class<*>, Channel<Any>>()
     val sharedMap = mutableMapOf<Any, SharedFlow<Any>>()
     val stateMap = mutableMapOf<Any, LiveData<Any>>()
+    lateinit var middleWareChain: MiddleWareChain
 
     init {
+        middleWares.add(this)
+        var middleWareChainTemp: MiddleWareChain? = null
+        middleWares.forEach {
+            var middleWareChainT = MiddleWareChain(it)
+            if (middleWareChainTemp != null)
+                middleWareChainTemp?.next = middleWareChainT
+            else
+                middleWareChain = middleWareChainT
+            middleWareChainTemp = middleWareChainT
+        }
+        middleWareChainTemp?.next = null
         viewModelScope.launch {
             list.forEach {
                 _reducerMap[it.actionClass] = Channel(Channel.UNLIMITED)
@@ -44,7 +59,7 @@ class StoreViewModel(private val list: List<Reducer<Any, Any>>) : ViewModel() {
 
     fun dispatch(action: Any) {
         viewModelScope.launch {
-            _reducerMap[action::class.java]!!.send(action)
+            dispatchWithCoroutine(action = action)
         }
     }
 
@@ -76,12 +91,35 @@ class StoreViewModel(private val list: List<Reducer<Any, Any>>) : ViewModel() {
 
 
     suspend fun dispatchWithCoroutine(action: Any) {
-        _reducerMap[action::class.java]!!.send(action)
+        middleWareChain.apply(action = action, this)
     }
 
     fun <T> getState(stateClass: Class<T>): MutableLiveData<T> {
         return stateMap[stateClass]!! as MutableLiveData<T>
     }
+
+    override suspend fun apply(
+        action: Any,
+        storeViewModel: StoreViewModel,
+    ): Boolean {
+        _reducerMap[action::class.java]!!.send(action)
+        return false
+    }
+
+    class MiddleWareChain(val middleWare: MiddleWare) : MiddleWare {
+        var next: MiddleWare? = null
+        override suspend fun apply(
+            action: Any,
+            storeViewModel: StoreViewModel,
+
+            ): Boolean {
+            val b = middleWare.apply(action = action, storeViewModel = storeViewModel)
+            if (b)
+                next?.apply(action = action, storeViewModel = storeViewModel)
+            return b
+        }
+    }
+
 }
 
 
@@ -90,12 +128,19 @@ abstract class Reducer<S, A>(val stateClass: Class<S>, val actionClass: Class<A>
 
 }
 
+interface MiddleWare {
+    abstract suspend fun apply(action: Any, storeViewModel: StoreViewModel): Boolean
+}
 
-class StoreViewModelFactory(val list: List<Reducer<out Any, out Any>>?) :
+
+class StoreViewModelFactory(
+    val list: List<Reducer<out Any, out Any>>?,
+    val middleWares: MutableList<MiddleWare>
+) :
     ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (StoreViewModel::class.java.isAssignableFrom(modelClass)) {
-            return StoreViewModel(list = list!! as List<Reducer<Any, Any>>) as T
+            return StoreViewModel(list = list!! as List<Reducer<Any, Any>>, middleWares) as T
         }
         throw RuntimeException("unknown class:" + modelClass.name)
     }
@@ -105,12 +150,13 @@ class StoreViewModelFactory(val list: List<Reducer<out Any, out Any>>?) :
 @Composable
 fun storeViewModel(
     list: List<Reducer<out Any, out Any>>? = null,
+    middleWares: MutableList<MiddleWare> = mutableListOf(),
     viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalContext.current as ViewModelStoreOwner) {
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     }
 ): StoreViewModel =
     viewModel(
         StoreViewModel::class.java,
-        factory = StoreViewModelFactory(list = list),
+        factory = StoreViewModelFactory(list = list, middleWares = middleWares),
         viewModelStoreOwner = viewModelStoreOwner
     )
