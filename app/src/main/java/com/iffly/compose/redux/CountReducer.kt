@@ -24,18 +24,18 @@ data class CountAction(val type: CountActionType, val data: Int) {
     }
 }
 
-data class CountState(val count: Int = 1)
+data class CountState(val count: Int = 1) {
+    val doubleCount: Int get() = count * 2
+}
 
 
 class CountReducer :
     Reducer<CountState, CountAction>(CountState::class.java, CountAction::class.java) {
     override fun reduce(
         countState: CountState,
-        action: CountAction
+        flow: Flow<CountAction>
     ): Flow<CountState> {
-        return flow {
-            emit(action)
-        }.flowOn(Dispatchers.IO).flatMapConcat { action ->
+        return flow.flowOn(Dispatchers.IO).flatMapConcat { action ->
             flow {
                 if (action.type == CountAction.CountActionType.Add)
                     emit(countState.copy(count = countState.count + action.data))

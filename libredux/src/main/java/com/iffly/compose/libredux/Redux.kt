@@ -33,7 +33,9 @@ class StoreViewModel(
                 sharedMap[it.stateClass] =
                     _reducerMap[it.actionClass]!!.receiveAsFlow().flatMapConcat { action ->
                         if (stateMap[it.stateClass]?.value != null)
-                            it.reduce(stateMap[it.stateClass]!!.value!!, action = action)
+                            it.reduce(
+                                stateMap[it.stateClass]!!.value!!,
+                                flow = flow { emit(action) })
                         else
                             flow {
                                 try {
@@ -111,7 +113,7 @@ interface StoreState {
 
 
 abstract class Reducer<S, A>(val stateClass: Class<S>, val actionClass: Class<A>) {
-    abstract fun reduce(state: S, action: A): Flow<S>
+    abstract fun reduce(state: S, flow: Flow<A>): Flow<S>
 
 }
 
