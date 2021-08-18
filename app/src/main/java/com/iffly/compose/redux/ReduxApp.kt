@@ -12,40 +12,56 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.iffly.compose.Content1
 import com.iffly.compose.Content2
-import com.iffly.compose.libredux.MiddleWare
-import com.iffly.compose.libredux.StoreViewModel
-import com.iffly.compose.libredux.storeViewModel
+import com.iffly.compose.libredux.*
 
 class TestMiddleWare1 : MiddleWare {
-    override suspend fun apply(action: Any, storeViewModel: StoreViewModel): Boolean {
-        Log.i("myyf", "mid1")
-        return true
-    }
 
+    override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
+        return { next: DispatchAction ->
+            object : DispatchAction {
+                override suspend fun dispatchAction(action: Any) {
+                    Log.i("myyf", "mid1")
+                    next.dispatchAction(action = action)
+                }
+            }
+        }
+    }
 }
 
-class TestMiddleWare2 : MiddleWare {
-    override suspend fun apply(action: Any, storeViewModel: StoreViewModel): Boolean {
-        Log.i("myyf", "mid2")
-        return true
-    }
-
-}
 
 class FunctionActionMiddleWare : MiddleWare {
 
     interface FunctionAction {
-        fun invoke(action: Any, storeViewModel: StoreViewModel)
+        suspend fun invoke(dispatchAction: StoreDispatch, state: StoreState)
     }
 
-    override suspend fun apply(action: Any, storeViewModel: StoreViewModel): Boolean {
-        if (action is FunctionAction) {
-            action.invoke(action = action, storeViewModel)
-            return false
+    override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
+        return { next ->
+            object : DispatchAction {
+                override suspend fun dispatchAction(action: Any) {
+                    if (action is FunctionAction)
+                        action.invoke(store, store)
+                    else {
+                        next.dispatchAction(action = action)
+                    }
+                }
+            }
         }
-        return true
     }
+}
 
+class TestMiddleWare2 : MiddleWare {
+
+    override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
+        return { next: DispatchAction ->
+            object : DispatchAction {
+                override suspend fun dispatchAction(action: Any) {
+                    Log.i("myyf", "mid2")
+                    next.dispatchAction(action = action)
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -53,7 +69,7 @@ fun ReduxApp() {
     val s =
         storeViewModel(
             listOf(CountReducer()),
-            mutableListOf(TestMiddleWare1(), TestMiddleWare2(), FunctionActionMiddleWare())
+            mutableListOf(TestMiddleWare1(), FunctionActionMiddleWare(), TestMiddleWare2())
         )
     LaunchedEffect(key1 = true) {
         s.depState(DepState::transform)
@@ -94,12 +110,11 @@ fun Screen1(
         { navController.navigate("screen2") }
     ) {
 //        s.dispatch(CountAction.provideAddAction(1))
-        s.dispatch(object:FunctionActionMiddleWare.FunctionAction{
-            override fun invoke(action: Any, storeViewModel: StoreViewModel) {
-                storeViewModel.dispatch(CountAction.provideAddAction(1))
-                storeViewModel.dispatch(CountAction.provideAddAction(1))
+        s.dispatch(object : FunctionActionMiddleWare.FunctionAction {
+            override suspend fun invoke(storeDispatch: StoreDispatch, state: StoreState) {
+                storeDispatch.dispatch(CountAction.provideAddAction(1))
+                storeDispatch.dispatch(CountAction.provideAddAction(1))
             }
-
         })
     }
 

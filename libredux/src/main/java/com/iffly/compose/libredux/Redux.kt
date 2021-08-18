@@ -11,26 +11,23 @@ import kotlinx.coroutines.launch
 
 class StoreViewModel(
     private val list: List<Reducer<Any, Any>>,
-    middleWares: MutableList<MiddleWare> = mutableListOf()
-) : MiddleWare, ViewModel() {
+    middleWares: List<MiddleWare> = emptyList()
+) : StoreDispatch, StoreState, DispatchAction, ViewModel() {
     private val _reducerMap = mutableMapOf<Class<*>, Channel<Any>>()
     val sharedMap = mutableMapOf<Any, SharedFlow<Any>>()
     val stateMap = mutableMapOf<Any, LiveData<Any>>()
-    lateinit var middleWareChain: MiddleWareChain
+    lateinit var dispatchActionHead: DispatchAction
 
     init {
-        middleWares.add(this)
-        var middleWareChainTemp: MiddleWareChain? = null
-        middleWares.forEach {
-            var middleWareChainT = MiddleWareChain(it)
-            if (middleWareChainTemp != null)
-                middleWareChainTemp?.next = middleWareChainT
-            else
-                middleWareChain = middleWareChainT
-            middleWareChainTemp = middleWareChainT
-        }
-        middleWareChainTemp?.next = null
         viewModelScope.launch {
+            dispatchActionHead = this@StoreViewModel
+            val reserve = middleWares.map {
+                it.invoke(this@StoreViewModel)
+            }.toList().asReversed()
+            reserve.forEach {
+                dispatchActionHead = it.invoke(dispatchActionHead)
+            }
+
             list.forEach {
                 _reducerMap[it.actionClass] = Channel(Channel.UNLIMITED)
                 sharedMap[it.stateClass] =
@@ -57,7 +54,7 @@ class StoreViewModel(
 
     }
 
-    fun dispatch(action: Any) {
+    override fun dispatch(action: Any) {
         viewModelScope.launch {
             dispatchWithCoroutine(action = action)
         }
@@ -90,36 +87,26 @@ class StoreViewModel(
     }
 
 
-    suspend fun dispatchWithCoroutine(action: Any) {
-        middleWareChain.apply(action = action, this)
+    override suspend fun dispatchWithCoroutine(action: Any) {
+        dispatchActionHead.dispatchAction(action = action)
     }
 
-    fun <T> getState(stateClass: Class<T>): MutableLiveData<T> {
+    override fun <T> getState(stateClass: Class<T>): MutableLiveData<T> {
         return stateMap[stateClass]!! as MutableLiveData<T>
     }
 
-    override suspend fun apply(
-        action: Any,
-        storeViewModel: StoreViewModel,
-    ): Boolean {
+    override suspend fun dispatchAction(action: Any) {
         _reducerMap[action::class.java]!!.send(action)
-        return false
     }
+}
 
-    class MiddleWareChain(val middleWare: MiddleWare) : MiddleWare {
-        var next: MiddleWare? = null
-        override suspend fun apply(
-            action: Any,
-            storeViewModel: StoreViewModel,
+interface StoreDispatch {
+    fun dispatch(action: Any)
+    suspend fun dispatchWithCoroutine(action: Any)
+}
 
-            ): Boolean {
-            val b = middleWare.apply(action = action, storeViewModel = storeViewModel)
-            if (b)
-                next?.apply(action = action, storeViewModel = storeViewModel)
-            return b
-        }
-    }
-
+interface StoreState {
+    fun <T> getState(stateClass: Class<T>): MutableLiveData<T>
 }
 
 
@@ -128,14 +115,19 @@ abstract class Reducer<S, A>(val stateClass: Class<S>, val actionClass: Class<A>
 
 }
 
+
+interface DispatchAction {
+    abstract suspend fun dispatchAction(action: Any)
+}
+
 interface MiddleWare {
-    abstract suspend fun apply(action: Any, storeViewModel: StoreViewModel): Boolean
+    abstract suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction
 }
 
 
 class StoreViewModelFactory(
     val list: List<Reducer<out Any, out Any>>?,
-    val middleWares: MutableList<MiddleWare>
+    val middleWares: List<MiddleWare>
 ) :
     ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
@@ -150,7 +142,7 @@ class StoreViewModelFactory(
 @Composable
 fun storeViewModel(
     list: List<Reducer<out Any, out Any>>? = null,
-    middleWares: MutableList<MiddleWare> = mutableListOf(),
+    middleWares: List<MiddleWare> = emptyList(),
     viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalContext.current as ViewModelStoreOwner) {
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     }
