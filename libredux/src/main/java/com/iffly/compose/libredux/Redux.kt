@@ -118,12 +118,12 @@ abstract class Reducer<S, A>(val stateClass: Class<S>, val actionClass: Class<A>
 }
 
 
-interface DispatchAction {
-    abstract suspend fun dispatchAction(action: Any)
+fun interface DispatchAction {
+    suspend fun dispatchAction(action: Any)
 }
 
-interface MiddleWare {
-    abstract suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction
+fun interface MiddleWare {
+    suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction
 }
 
 

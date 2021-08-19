@@ -18,11 +18,9 @@ class TestMiddleWare1 : MiddleWare {
 
     override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
         return { next: DispatchAction ->
-            object : DispatchAction {
-                override suspend fun dispatchAction(action: Any) {
-                    Log.i("myyf", "mid1")
-                    next.dispatchAction(action = action)
-                }
+            DispatchAction { action ->
+                Log.i("myyf", "mid1")
+                next.dispatchAction(action = action)
             }
         }
     }
@@ -31,19 +29,17 @@ class TestMiddleWare1 : MiddleWare {
 
 class FunctionActionMiddleWare : MiddleWare {
 
-    interface FunctionAction {
+    fun interface FunctionAction {
         suspend fun invoke(dispatchAction: StoreDispatch, state: StoreState)
     }
 
     override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
         return { next ->
-            object : DispatchAction {
-                override suspend fun dispatchAction(action: Any) {
-                    if (action is FunctionAction)
-                        action.invoke(store, store)
-                    else {
-                        next.dispatchAction(action = action)
-                    }
+            DispatchAction { action ->
+                if (action is FunctionAction)
+                    action.invoke(store, store)
+                else {
+                    next.dispatchAction(action = action)
                 }
             }
         }
@@ -54,11 +50,9 @@ class TestMiddleWare2 : MiddleWare {
 
     override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
         return { next: DispatchAction ->
-            object : DispatchAction {
-                override suspend fun dispatchAction(action: Any) {
-                    Log.i("myyf", "mid2")
-                    next.dispatchAction(action = action)
-                }
+            DispatchAction { action ->
+                Log.i("myyf", "mid2")
+                next.dispatchAction(action = action)
             }
         }
     }
@@ -110,11 +104,9 @@ fun Screen1(
         { navController.navigate("screen2") }
     ) {
 //        s.dispatch(CountAction.provideAddAction(1))
-        s.dispatch(object : FunctionActionMiddleWare.FunctionAction {
-            override suspend fun invoke(storeDispatch: StoreDispatch, state: StoreState) {
-                storeDispatch.dispatch(CountAction.provideAddAction(1))
-                storeDispatch.dispatch(CountAction.provideAddAction(1))
-            }
+        s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
+            storeDispatch.dispatch(CountAction.provideAddAction(1))
+            storeDispatch.dispatch(CountAction.provideAddAction(1))
         })
     }
 
