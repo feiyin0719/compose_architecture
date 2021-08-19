@@ -43,10 +43,12 @@ class CountReducer :
     }
 }
 
-data class CountFloatState(val count: Int = 1)
+data class CountFloatState(val count: Float = 1f)
 
-data class CountFloatAction(val type: CountAction.CountActionType) {
-
+data class CountFloatAction(val type: CountFloatActionType) {
+    enum class CountFloatActionType {
+        Add, Reduce
+    }
 }
 
 class CountFloatReducer : Reducer<CountFloatState, CountFloatAction>(
@@ -58,7 +60,12 @@ class CountFloatReducer : Reducer<CountFloatState, CountFloatAction>(
         flow: Flow<CountFloatAction>
     ): Flow<CountFloatState> {
         return flow.map {
-            state.copy()
+            return@map when (it.type) {
+                CountFloatAction.CountFloatActionType.Add ->
+                    state.copy(count = state.count + 1)
+                CountFloatAction.CountFloatActionType.Reduce ->
+                    state.copy(count = state.count - 1)
+            }
         }
     }
 
@@ -77,7 +84,7 @@ data class DepState2(val depCount: Int = 0) {
 
     companion object {
         fun transform(countState: CountState, countFloatState: CountFloatState): DepState2 {
-            return DepState2(countState.count + countFloatState.count)
+            return DepState2((countState.count + (countFloatState.count)).toInt())
         }
     }
 }
