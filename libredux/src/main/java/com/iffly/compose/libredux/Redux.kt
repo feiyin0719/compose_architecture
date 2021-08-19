@@ -13,10 +13,10 @@ class StoreViewModel(
     private val list: List<Reducer<Any, Any>>,
     middleWares: List<MiddleWare> = emptyList()
 ) : StoreDispatch, StoreState, DispatchAction, ViewModel() {
-    private val _reducerMap = mutableMapOf<Class<*>, Channel<Any>>()
+    private val _reducerMap = mutableMapOf<Class<Any>, Channel<Any>>()
     val sharedMap = mutableMapOf<Any, SharedFlow<Any>>()
     val stateMap = mutableMapOf<Any, LiveData<Any>>()
-    lateinit var dispatchActionHead: DispatchAction
+    private lateinit var dispatchActionHead: DispatchAction
 
     init {
         viewModelScope.launch {
@@ -80,7 +80,7 @@ class StoreViewModel(
         scope: CoroutineScope = viewModelScope
     ) {
 
-        sharedMap[R::class.java] = sharedMap[T1::class.java]!!.zip(sharedMap[T2::class.java]!!)
+        sharedMap[R::class.java] = sharedMap[T1::class.java]!!.combine(sharedMap[T2::class.java]!!)
         { t1, t2 ->
             transform(t1 as T1, t2 as T2)
         }.shareIn(scope = scope, SharingStarted.Lazily, 1) as SharedFlow<Any>
@@ -112,7 +112,10 @@ interface StoreState {
 }
 
 
-abstract class Reducer<S, A>(val stateClass: Class<S>, val actionClass: Class<A>) {
+abstract class Reducer<S, A>(
+    val stateClass: Class<S>,
+    val actionClass: Class<A>
+) {
     abstract fun reduce(state: S, flow: Flow<A>): Flow<S>
 
 }

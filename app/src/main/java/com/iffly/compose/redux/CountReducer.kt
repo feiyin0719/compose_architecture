@@ -2,10 +2,7 @@ package com.iffly.compose.redux.ui
 
 import com.iffly.compose.libredux.Reducer
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.*
 
 
 data class CountAction(val type: CountActionType, val data: Int) {
@@ -44,10 +41,28 @@ class CountReducer :
             }
         }.flowOn(Dispatchers.IO)
     }
+}
 
+data class CountFloatState(val count: Int = 1)
+
+data class CountFloatAction(val type: CountAction.CountActionType) {
 
 }
 
+class CountFloatReducer : Reducer<CountFloatState, CountFloatAction>(
+    CountFloatState::class.java,
+    CountFloatAction::class.java
+) {
+    override fun reduce(
+        state: CountFloatState,
+        flow: Flow<CountFloatAction>
+    ): Flow<CountFloatState> {
+        return flow.map {
+            state.copy()
+        }
+    }
+
+}
 
 data class DepState(val depCount: Int = 0) {
 
@@ -61,8 +76,8 @@ data class DepState(val depCount: Int = 0) {
 data class DepState2(val depCount: Int = 0) {
 
     companion object {
-        fun transform(countState: CountState, depState: DepState): DepState2 {
-            return DepState2(countState.count + depState.depCount)
+        fun transform(countState: CountState, countFloatState: CountFloatState): DepState2 {
+            return DepState2(countState.count + countFloatState.count)
         }
     }
 }

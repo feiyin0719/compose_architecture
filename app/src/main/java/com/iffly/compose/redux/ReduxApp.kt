@@ -62,7 +62,7 @@ class TestMiddleWare2 : MiddleWare {
 fun ReduxApp() {
     val s =
         storeViewModel(
-            listOf(CountReducer()),
+            listOf(CountReducer(), CountFloatReducer()),
             mutableListOf(TestMiddleWare1(), FunctionActionMiddleWare(), TestMiddleWare2())
         )
     LaunchedEffect(key1 = true) {
