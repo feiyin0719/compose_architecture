@@ -16,9 +16,9 @@ import com.iffly.compose.libredux.*
 
 class TestMiddleWare1 : MiddleWare {
 
-    override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
-        return { next: DispatchAction ->
-            DispatchAction { action ->
+    override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
+        return { next: MiddleWareDispatch ->
+            MiddleWareDispatch { action ->
                 Log.i("myyf", "mid1")
                 next.dispatchAction(action = action)
             }
@@ -30,14 +30,14 @@ class TestMiddleWare1 : MiddleWare {
 class FunctionActionMiddleWare : MiddleWare {
 
     fun interface FunctionAction {
-        suspend fun invoke(dispatchAction: StoreDispatch, state: StoreState)
+        suspend operator fun invoke(dispatchAction: StoreDispatch, state: StoreState)
     }
 
-    override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
+    override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
         return { next ->
-            DispatchAction { action ->
+            MiddleWareDispatch { action ->
                 if (action is FunctionAction)
-                    action.invoke(store, store)
+                    action(store, store)
                 else {
                     next.dispatchAction(action = action)
                 }
@@ -48,9 +48,9 @@ class FunctionActionMiddleWare : MiddleWare {
 
 class TestMiddleWare2 : MiddleWare {
 
-    override suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction {
-        return { next: DispatchAction ->
-            DispatchAction { action ->
+    override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
+        return { next: MiddleWareDispatch ->
+            MiddleWareDispatch { action ->
                 Log.i("myyf", "mid2")
                 next.dispatchAction(action = action)
             }
@@ -105,8 +105,8 @@ fun Screen1(
     ) {
 //        s.dispatch(CountAction.provideAddAction(1))
         s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
-            storeDispatch.dispatch(CountAction.provideAddAction(1))
-            storeDispatch.dispatch(CountAction.provideAddAction(1))
+            storeDispatch.dispatch(CountAction addWith 1)
+            storeDispatch.dispatch(CountAction addWith 1)
         })
     }
 
@@ -119,6 +119,6 @@ fun Screen2(navController: NavController) {
     val state: CountState by s.getState(CountState::class.java)
         .observeAsState(CountState(1))
     Content2(count = state.count) {
-        s.dispatch(CountAction.provideReduceAction(1))
+        s.dispatch(CountAction reduceWith 1)
     }
 }

@@ -12,20 +12,20 @@ import kotlinx.coroutines.launch
 class StoreViewModel(
     private val list: List<Reducer<Any, Any>>,
     middleWares: List<MiddleWare> = emptyList()
-) : StoreDispatch, StoreState, DispatchAction, ViewModel() {
+) : StoreDispatch, StoreState, MiddleWareDispatch, ViewModel() {
     private val _reducerMap = mutableMapOf<Class<Any>, Channel<Any>>()
     val sharedMap = mutableMapOf<Any, SharedFlow<Any>>()
     val stateMap = mutableMapOf<Any, LiveData<Any>>()
-    private lateinit var dispatchActionHead: DispatchAction
+    private lateinit var middleWareDispatchHead: MiddleWareDispatch
 
     init {
         viewModelScope.launch {
-            dispatchActionHead = this@StoreViewModel
+            middleWareDispatchHead = this@StoreViewModel
             val reserve = middleWares.map {
-                it.invoke(this@StoreViewModel)
+                it(this@StoreViewModel)
             }.toList().asReversed()
             reserve.forEach {
-                dispatchActionHead = it.invoke(dispatchActionHead)
+                middleWareDispatchHead = it(middleWareDispatchHead)
             }
 
             list.forEach {
@@ -63,7 +63,7 @@ class StoreViewModel(
     }
 
     inline fun <reified T, reified R> depState(
-        crossinline transform: (T) -> R,
+        noinline transform: (T) -> R,
         scope: CoroutineScope = viewModelScope
     ) {
         sharedMap[R::class.java] = sharedMap[T::class.java]!!
@@ -76,7 +76,7 @@ class StoreViewModel(
 
 
     inline fun <reified T1, reified T2, reified R> depState(
-        crossinline transform: (T1, T2) -> R,
+        noinline transform: (T1, T2) -> R,
         scope: CoroutineScope = viewModelScope
     ) {
 
@@ -90,7 +90,7 @@ class StoreViewModel(
 
 
     override suspend fun dispatchWithCoroutine(action: Any) {
-        dispatchActionHead.dispatchAction(action = action)
+        middleWareDispatchHead.dispatchAction(action = action)
     }
 
     override fun <T> getState(stateClass: Class<T>): MutableLiveData<T> {
@@ -121,12 +121,12 @@ abstract class Reducer<S, A>(
 }
 
 
-fun interface DispatchAction {
+fun interface MiddleWareDispatch {
     suspend fun dispatchAction(action: Any)
 }
 
 fun interface MiddleWare {
-    suspend fun invoke(store: StoreViewModel): (DispatchAction) -> DispatchAction
+    suspend operator fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch
 }
 
 

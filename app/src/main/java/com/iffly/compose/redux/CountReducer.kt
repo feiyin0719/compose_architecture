@@ -11,11 +11,12 @@ data class CountAction(val type: CountActionType, val data: Int) {
     }
 
     companion object {
-        fun provideAddAction(data: Int): CountAction {
+
+        infix fun addWith(data: Int): CountAction {
             return CountAction(CountActionType.Add, data = data)
         }
 
-        fun provideReduceAction(data: Int): CountAction {
+        infix fun reduceWith(data: Int): CountAction {
             return CountAction(CountActionType.Reduce, data = data)
         }
     }
