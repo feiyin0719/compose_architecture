@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
+    id 'maven-publish'
 }
 
 android {
@@ -51,4 +52,42 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+}
+
+
+ext {
+    // 从Github上clone下来的项目的本地地址
+    GITHUB_REPO_PATH = "./"
+    PUBLISH_GROUP_ID = 'com.iffly'
+    PUBLISH_ARTIFACT_ID = 'redux'
+    PUBLISH_VERSION = '0.0.1'
+}
+// 源代码一起打包
+//生成源码jar包task，type表示继承Jar打包任务。
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier.set("sources")
+}
+artifacts {
+    archives sourcesJar
+}
+afterEvaluate {
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.release
+                artifact sourcesJar
+
+                groupId project.PUBLISH_GROUP_ID
+                artifactId project.PUBLISH_ARTIFACT_ID
+                version project.PUBLISH_VERSION
+            }
+        }
+        repositories {
+            maven {
+                def deployPath = file(project.GITHUB_REPO_PATH)
+                url "file://${deployPath.absolutePath}"
+            }
+        }
+    }
 }
