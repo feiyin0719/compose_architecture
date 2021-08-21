@@ -57,7 +57,7 @@ dependencies {
 
 ext {
     // 从Github上clone下来的项目的本地地址
-    GITHUB_REPO_PATH = "./"
+    GITHUB_REPO_PATH = "../"
     PUBLISH_GROUP_ID = 'com.iffly'
     PUBLISH_ARTIFACT_ID = 'redux'
     PUBLISH_VERSION = '0.0.1'
