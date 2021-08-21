@@ -31,6 +31,8 @@ class StoreViewModel(
             }
 
             list.forEach {
+                if (_reducerMap.containsKey(it.actionClass))
+                    throw IllegalStateException("The  ${it.actionClass} action cannot register twice")
                 _reducerMap[it.actionClass] = Channel(Channel.UNLIMITED)
                 sharedMap[it.stateClass] =
                     _reducerMap[it.actionClass]!!.receiveAsFlow().flatMapConcat { action ->
@@ -70,6 +72,8 @@ class StoreViewModel(
         noinline transform: (T) -> R,
         scope: CoroutineScope = viewModelScope
     ) {
+        if (sharedMap.containsKey(R::class.java))
+            throw IllegalStateException("The ${R::class.java} state have already register")
         sharedMap[R::class.java] = sharedMap[T::class.java]!!
             .map {
                 transform(it as T)
@@ -83,7 +87,8 @@ class StoreViewModel(
         noinline transform: (T1, T2) -> R,
         scope: CoroutineScope = viewModelScope
     ) {
-
+        if (sharedMap.containsKey(R::class.java))
+            throw IllegalStateException("The ${R::class.java} state have already register")
         sharedMap[R::class.java] = sharedMap[T1::class.java]!!.combine(sharedMap[T2::class.java]!!)
         { t1, t2 ->
             transform(t1 as T1, t2 as T2)
@@ -121,7 +126,6 @@ abstract class Reducer<S, A>(
     val actionClass: Class<A>
 ) {
     abstract fun reduce(state: S, flow: Flow<A>): Flow<S>
-
 }
 
 
