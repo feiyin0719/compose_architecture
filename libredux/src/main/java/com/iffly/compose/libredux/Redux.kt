@@ -5,9 +5,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class StoreViewModel(
     private val list: List<Reducer<Any, Any>>,
@@ -56,9 +58,11 @@ class StoreViewModel(
 
     }
 
-    override fun dispatch(action: Any) {
-        viewModelScope.launch {
-            dispatchWithCoroutine(action = action)
+    override fun dispatch(action: Any): Any? {
+        return runBlocking {
+            return@runBlocking viewModelScope.async {
+                return@async dispatchWithCoroutine(action = action)
+            }.await()
         }
     }
 
@@ -89,8 +93,8 @@ class StoreViewModel(
     }
 
 
-    override suspend fun dispatchWithCoroutine(action: Any) {
-        middleWareDispatchHead.dispatchAction(action = action)
+    override suspend fun dispatchWithCoroutine(action: Any): Any? {
+        return middleWareDispatchHead.dispatchAction(action = action)
     }
 
     override fun <T> getState(stateClass: Class<T>): MutableLiveData<T> {
@@ -103,8 +107,8 @@ class StoreViewModel(
 }
 
 interface StoreDispatch {
-    fun dispatch(action: Any)
-    suspend fun dispatchWithCoroutine(action: Any)
+    fun dispatch(action: Any): Any?
+    suspend fun dispatchWithCoroutine(action: Any): Any?
 }
 
 interface StoreState {
@@ -122,7 +126,7 @@ abstract class Reducer<S, A>(
 
 
 fun interface MiddleWareDispatch {
-    suspend fun dispatchAction(action: Any)
+    suspend fun dispatchAction(action: Any): Any?
 }
 
 fun interface MiddleWare {

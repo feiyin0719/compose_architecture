@@ -30,7 +30,7 @@ class TestMiddleWare1 : MiddleWare {
 class FunctionActionMiddleWare : MiddleWare {
 
     fun interface FunctionAction {
-        suspend operator fun invoke(dispatchAction: StoreDispatch, state: StoreState)
+        suspend operator fun invoke(dispatchAction: StoreDispatch, state: StoreState): Any?
     }
 
     override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
@@ -104,10 +104,12 @@ fun Screen1(
         { navController.navigate("screen2") }
     ) {
 //        s.dispatch(CountAction.provideAddAction(1))
-        s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
+        val i = s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
             storeDispatch.dispatch(CountAction addWith 1)
             storeDispatch.dispatch(CountAction addWith 1)
+            1
         })
+        Log.i("myyf","$i")
     }
 
 }
