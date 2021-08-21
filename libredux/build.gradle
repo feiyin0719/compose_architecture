@@ -60,7 +60,7 @@ ext {
     GITHUB_REPO_PATH = "../"
     PUBLISH_GROUP_ID = 'com.iffly'
     PUBLISH_ARTIFACT_ID = 'redux'
-    PUBLISH_VERSION = '0.0.1'
+    PUBLISH_VERSION = '0.0.2'
 }
 // 源代码一起打包
 //生成源码jar包task，type表示继承Jar打包任务。
