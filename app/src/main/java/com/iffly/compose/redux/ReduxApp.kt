@@ -63,7 +63,7 @@ fun ReduxApp() {
     val s =
         storeViewModel(
             listOf(CountReducer(), CountFloatReducer()),
-            mutableListOf(TestMiddleWare1(), FunctionActionMiddleWare(), TestMiddleWare2())
+            listOf(TestMiddleWare1(), FunctionActionMiddleWare(), TestMiddleWare2())
         )
     LaunchedEffect(key1 = true) {
         s.depState(DepState::transform)
