@@ -21,3 +21,5 @@ rootProject.name = "compose_redux"
 include ':app'
 include ':libredux'
 include ':libScopeViewModel'
+include ':reduxannotation'
+include ':redux_annotation_ksp'
