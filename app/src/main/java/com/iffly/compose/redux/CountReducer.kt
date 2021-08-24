@@ -51,7 +51,7 @@ data class CountFloatAction(val type: CountFloatActionType) {
         Add, Reduce
     }
 }
-
+@com.iffly.redux.annotation.Reducer
 class CountFloatReducer : Reducer<CountFloatState, CountFloatAction>(
     CountFloatState::class.java,
     CountFloatAction::class.java
