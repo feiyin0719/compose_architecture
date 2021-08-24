@@ -28,6 +28,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            kapt{
+
+            }
+        }
+
+        debug {
+            kapt{}
         }
     }
     compileOptions {
@@ -44,7 +51,9 @@ android {
         kotlinCompilerExtensionVersion = compose_version
     }
 }
+ksp{
 
+}
 dependencies {
 
     implementation("androidx.core:core-ktx:1.6.0")
@@ -63,7 +72,7 @@ dependencies {
     implementation( project( ":libredux"))
     implementation( project( ":libScopeViewModel"))
     implementation( project( ":reduxannotation"))
-    kapt(project(":redux_annotation_ksp"))
+    ksp(project(":redux_annotation_ksp"))
     implementation( "androidx.appcompat:appcompat:1.3.1")
     implementation( "com.google.android.material:material:1.4.0")
     testImplementation( "junit:junit:4.+")

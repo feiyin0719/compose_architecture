@@ -1,9 +1,9 @@
-val kspVersion:String = "1.5.21-1.0.0-beta07"
+val kspVersion:String = "1.5.10-1.0.0-beta01"
 
 plugins {
     id("java-library")
     id("kotlin")
-    id("com.google.devtools.ksp") version "1.5.21-1.0.0-beta07"
+    id("com.google.devtools.ksp")
     kotlin("jvm")
 }
 
