@@ -6,13 +6,16 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.iffly.redux.annotation.Reducer
+import kotlin.concurrent.thread
 
 class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolProcessor {
     companion object {
-        public val REDUCER_NAME: String = requireNotNull(Reducer::class.qualifiedName)
+         val REDUCER_NAME: String = requireNotNull(Reducer::class.qualifiedName)
     }
 
     val logger = environment.logger
+
+    val list = mutableListOf<KSClassDeclaration>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("myyf start" )
@@ -29,9 +32,14 @@ class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolP
                         ?: run {
                             return@forEach
                         }
-                logger.info("myyf", reducer)
+                list.add(reducer)
+            }
+        logger.warn("myyf $list")
+        thread(true) {
+            synchronized(list){
 
             }
+        }
 
         return emptyList()
     }

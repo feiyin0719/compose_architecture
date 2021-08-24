@@ -26,7 +26,7 @@ data class CountState(val count: Int = 1) {
     val doubleCount: Int get() = count * 2
 }
 
-
+@com.iffly.redux.annotation.Reducer
 class CountReducer :
     Reducer<CountState, CountAction>(CountState::class.java, CountAction::class.java) {
     override fun reduce(
