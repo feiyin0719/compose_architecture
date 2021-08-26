@@ -141,13 +141,13 @@ fun interface MiddleWare {
 
 class StoreViewModelFactory(
     val list: List<Reducer<out Any, out Any>>?,
-    val middleWares: List<MiddleWare>
+    val middleWares: List<MiddleWare>?
 ) :
     ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (StoreViewModel::class.java.isAssignableFrom(modelClass)) {
             var useList = list
-            if(useList == null)
+            if (useList == null)
                 try {
                     val conClass = Class.forName("com.iffly.compose.libredux.ReduxListContainer")
                     val constructor = conClass.getDeclaredConstructor()
@@ -161,7 +161,10 @@ class StoreViewModelFactory(
                     Log.i("myyf", "$e")
                 }
 
-            return StoreViewModel(list = useList!! as List<Reducer<Any, Any>>, middleWares) as T
+            return StoreViewModel(
+                list = useList!! as List<Reducer<Any, Any>>,
+                middleWares ?: emptyList()
+            ) as T
         }
         throw RuntimeException("unknown class:" + modelClass.name)
     }
@@ -171,7 +174,7 @@ class StoreViewModelFactory(
 @Composable
 fun storeViewModel(
     list: List<Reducer<out Any, out Any>>? = null,
-    middleWares: List<MiddleWare> = emptyList(),
+    middleWares: List<MiddleWare>? = null,
     viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalContext.current as ViewModelStoreOwner) {
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     }

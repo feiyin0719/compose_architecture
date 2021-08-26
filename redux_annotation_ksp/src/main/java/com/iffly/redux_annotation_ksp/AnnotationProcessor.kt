@@ -7,6 +7,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSVisitorVoid
+import com.iffly.redux.annotation.MiddleWare
 import com.iffly.redux.annotation.Reducer
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.MemberName.Companion.member
@@ -16,14 +17,16 @@ import kotlin.concurrent.thread
 class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolProcessor {
     companion object {
         val REDUCER_NAME: String = requireNotNull(Reducer::class.qualifiedName)
+        val MIDDLEWARE_NAME: String = requireNotNull(MiddleWare::class.qualifiedName)
     }
 
     private val codeGenerator = environment.codeGenerator
     val logger = environment.logger
 
-    val list = mutableListOf<KSClassDeclaration>()
+    val reducerClassDels = mutableListOf<KSClassDeclaration>()
+    val middleWareClassDels = mutableListOf<KSClassDeclaration>()
 
-    inner class ReducerVisitor(val list: MutableList<KSClassDeclaration>) : KSVisitorVoid() {
+    inner class ClassVisitor(val list: MutableList<KSClassDeclaration>) : KSVisitorVoid() {
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
             list.add(classDeclaration)
         }
@@ -32,23 +35,31 @@ class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolP
     @ExperimentalStdlibApi
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("redux annotation process start")
-        val reducerType = resolver.getClassDeclarationByName(
+        val reducerAnnotationType = resolver.getClassDeclarationByName(
             resolver.getKSNameFromString(REDUCER_NAME)
         )?.asType(emptyList()) ?: return emptyList()
-        val visitor = ReducerVisitor(list)
+        val middleWareAnnotationType = resolver.getClassDeclarationByName(
+            resolver.getKSNameFromString(MIDDLEWARE_NAME)
+        )?.asType(emptyList()) ?: return emptyList()
+        val reducerVisitor = ClassVisitor(reducerClassDels)
+        val middleWareVisitor = ClassVisitor(middleWareClassDels)
         resolver.getSymbolsWithAnnotation(REDUCER_NAME)
             .asSequence()
             .filterIsInstance<KSClassDeclaration>()
-            .forEach { reducer ->
-                val annotation =
-                    reducer.annotations.find { it.annotationType.resolve() == reducerType }
-                annotation?.let { reducer.accept(visitor, Unit) }
+            .forEach { ksClassDeclaration ->
 
-
+                ksClassDeclaration.annotations.find { it.annotationType.resolve() == reducerAnnotationType }
+                    ?.let { ksClassDeclaration.accept(reducerVisitor, Unit) }
+            }
+        resolver.getSymbolsWithAnnotation(MIDDLEWARE_NAME)
+            .asSequence()
+            .filterIsInstance<KSClassDeclaration>()
+            .forEach { ksClassDeclaration ->
+                ksClassDeclaration.annotations.find { it.annotationType.resolve() == middleWareAnnotationType }
+                    ?.let { ksClassDeclaration.accept(middleWareVisitor, Unit) }
             }
         thread(true) {
             synchronized(codeGenerator) {
-
                 val reducerType =
                     ClassName.bestGuess("com.iffly.compose.libredux.Reducer").parameterizedBy(
                         listOf(
@@ -57,13 +68,30 @@ class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolP
                         )
                     )
 
-
+                val middleWareType = ClassName.bestGuess("com.iffly.compose.libredux.MiddleWare")
                 val reducerListType = MUTABLE_LIST.parameterizedBy(reducerType)
+                val middleWareListType = MUTABLE_LIST.parameterizedBy(middleWareType)
+                logger.warn("myyf ${middleWareClassDels}")
+                val middleWareClassDelSort = middleWareClassDels.map { classDefine ->
+
+                    val pri: Int = (classDefine.annotations
+                        .find { it.annotationType.resolve() == middleWareAnnotationType }
+                        ?.arguments?.get(0)?.value ?: -1) as Int
+                    Pair(
+                        pri, classDefine
+                    )
+                }.sortedBy {
+                    it.first
+                }.map {
+                    it.second
+                }
                 val packageName = "com.iffly.compose.libredux"
                 val containerClassName = "ReduxListContainer"
                 val reducersVarName = "reducers"
+                val middleWareVarName = "middleWares"
                 val containerClass = ClassName(packageName, containerClassName)
                 val reducerMemberName = containerClass.member(reducersVarName)
+                val middleWareMemberName = containerClass.member(middleWareVarName)
                 val mutableListMemberName = MemberName("kotlin.collections", "mutableListOf")
                 val reduxContainerSpec =
                     TypeSpec.objectBuilder(containerClassName)
@@ -79,8 +107,20 @@ class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolP
                                     "%M()", mutableListMemberName
                                 ).build()
                             )
+
+                            addProperty(
+                                PropertySpec.builder(
+                                    middleWareVarName,
+                                    middleWareListType,
+                                    KModifier.PUBLIC
+                                ).initializer(
+                                    "%M()", mutableListMemberName
+                                ).build()
+                            )
+
+
                             val initBlockBuilder = CodeBlock.builder()
-                            list.forEach {
+                            reducerClassDels.forEach {
                                 initBlockBuilder.addStatement(
                                     """
                                     %M.add(%T())
@@ -89,6 +129,17 @@ class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolP
                                     ClassName.bestGuess(it.qualifiedName?.asString() ?: "")
                                 )
                             }
+
+                            middleWareClassDelSort.forEach {
+                                initBlockBuilder.addStatement(
+                                    """
+                                    %M.add(%T())
+                                """.trimIndent(),
+                                    middleWareMemberName,
+                                    ClassName.bestGuess(it.qualifiedName?.asString() ?: "")
+                                )
+                            }
+
                             addInitializerBlock(initBlockBuilder.build())
                         }
                         .build()
@@ -107,9 +158,10 @@ class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolP
                 ).addAnnotation(composeAnnotationType)
                     .addModifiers(KModifier.PUBLIC)
                     .addStatement(
-                        "return %M(list = %M)",
+                        "return %M(list = %M, middleWares = %M)",
                         storeViewModelMemberName,
-                        reducerMemberName
+                        reducerMemberName,
+                        middleWareMemberName
                     )
                     .build()
 

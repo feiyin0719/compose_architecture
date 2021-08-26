@@ -13,7 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.iffly.compose.Content1
 import com.iffly.compose.Content2
 import com.iffly.compose.libredux.*
-
+@com.iffly.redux.annotation.MiddleWare
 class TestMiddleWare1 : MiddleWare {
 
     override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
@@ -26,7 +26,7 @@ class TestMiddleWare1 : MiddleWare {
     }
 }
 
-
+@com.iffly.redux.annotation.MiddleWare
 class FunctionActionMiddleWare : MiddleWare {
 
     fun interface FunctionAction {
@@ -45,7 +45,7 @@ class FunctionActionMiddleWare : MiddleWare {
         }
     }
 }
-
+@com.iffly.redux.annotation.MiddleWare(2)
 class TestMiddleWare2 : MiddleWare {
 
     override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
@@ -99,15 +99,14 @@ fun Screen1(
     Content1(count = state.count, depCount = depState.depCount, depCount2 = depState2.depCount,
         { navController.navigate("screen2") }
     ) {
-        s.dispatch(CountAction addWith 1)
-//        s.dispatch(CountAction.provideAddAction(1))
-//        val i =
-//            s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
-//                storeDispatch.dispatch(CountAction addWith 1)
-//                storeDispatch.dispatch(CountAction addWith 1)
-//                1
-//            })
-//        Log.i("myyf", "$i")
+//        s.dispatch(CountAction addWith 1)
+        val i =
+            s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
+                storeDispatch.dispatch(CountAction addWith 1)
+                storeDispatch.dispatch(CountAction addWith 1)
+                1
+            })
+        Log.i("myyf", "$i")
     }
 
 }
