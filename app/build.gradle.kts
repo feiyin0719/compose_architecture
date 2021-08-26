@@ -31,10 +31,20 @@ android {
             kapt{
 
             }
+            sourceSets {
+                getByName("main"){
+                    java.srcDir(File("build/generated/ksp/release/kotlin"))
+                }
+            }
         }
 
         debug {
             kapt{}
+            sourceSets {
+                getByName("main"){
+                    java.srcDir(File("build/generated/ksp/debug/kotlin"))
+                }
+            }
         }
     }
     compileOptions {

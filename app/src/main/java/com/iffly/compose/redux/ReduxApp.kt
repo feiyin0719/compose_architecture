@@ -60,10 +60,7 @@ class TestMiddleWare2 : MiddleWare {
 
 @Composable
 fun ReduxApp() {
-    val s =
-        storeViewModel(
-            middleWares = listOf(TestMiddleWare1(), FunctionActionMiddleWare(), TestMiddleWare2())
-        )
+    val s = storeViewModelInit()
     LaunchedEffect(key1 = true) {
         s.depState(DepState::transform)
         s.depState(DepState2::transform)
@@ -102,14 +99,15 @@ fun Screen1(
     Content1(count = state.count, depCount = depState.depCount, depCount2 = depState2.depCount,
         { navController.navigate("screen2") }
     ) {
+        s.dispatch(CountAction addWith 1)
 //        s.dispatch(CountAction.provideAddAction(1))
-        val i =
-            s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
-                storeDispatch.dispatch(CountAction addWith 1)
-                storeDispatch.dispatch(CountAction addWith 1)
-                1
-            })
-        Log.i("myyf", "$i")
+//        val i =
+//            s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
+//                storeDispatch.dispatch(CountAction addWith 1)
+//                storeDispatch.dispatch(CountAction addWith 1)
+//                1
+//            })
+//        Log.i("myyf", "$i")
     }
 
 }
