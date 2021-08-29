@@ -14,7 +14,7 @@ import com.squareup.kotlinpoet.MemberName.Companion.member
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import kotlin.concurrent.thread
 
-class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolProcessor {
+class ReduxAnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolProcessor {
     companion object {
         val REDUCER_NAME: String = requireNotNull(Reducer::class.qualifiedName)
         val MIDDLEWARE_NAME: String = requireNotNull(MiddleWare::class.qualifiedName)
@@ -71,9 +71,7 @@ class AnnotationProcessor(val environment: SymbolProcessorEnvironment) : SymbolP
                 val middleWareType = ClassName.bestGuess("com.iffly.compose.libredux.MiddleWare")
                 val reducerListType = MUTABLE_LIST.parameterizedBy(reducerType)
                 val middleWareListType = MUTABLE_LIST.parameterizedBy(middleWareType)
-                logger.warn("myyf ${middleWareClassDels}")
                 val middleWareClassDelSort = middleWareClassDels.map { classDefine ->
-
                     val pri: Int = (classDefine.annotations
                         .find { it.annotationType.resolve() == middleWareAnnotationType }
                         ?.arguments?.get(0)?.value ?: -1) as Int

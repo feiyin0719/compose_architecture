@@ -1,4 +1,4 @@
-package com.iffly.compose.redux.ui
+package com.iffly.compose.redux
 
 import android.util.Log
 import androidx.compose.runtime.Composable
@@ -13,7 +13,8 @@ import androidx.navigation.compose.rememberNavController
 import com.iffly.compose.Content1
 import com.iffly.compose.Content2
 import com.iffly.compose.libredux.*
-@com.iffly.redux.annotation.MiddleWare
+
+@com.iffly.redux.annotation.MiddleWare(3)
 class TestMiddleWare1 : MiddleWare {
 
     override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
@@ -26,7 +27,7 @@ class TestMiddleWare1 : MiddleWare {
     }
 }
 
-@com.iffly.redux.annotation.MiddleWare
+@com.iffly.redux.annotation.MiddleWare(1)
 class FunctionActionMiddleWare : MiddleWare {
 
     fun interface FunctionAction {
@@ -62,8 +63,8 @@ class TestMiddleWare2 : MiddleWare {
 fun ReduxApp() {
     val s = storeViewModelInit()
     LaunchedEffect(key1 = true) {
-        s.depState(DepState::transform)
-        s.depState(DepState2::transform)
+        s.depState(DepState.Companion::transform)
+        s.depState(DepState2.Companion::transform)
 
     }
 

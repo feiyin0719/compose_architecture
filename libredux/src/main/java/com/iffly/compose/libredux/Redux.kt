@@ -147,19 +147,19 @@ class StoreViewModelFactory(
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (StoreViewModel::class.java.isAssignableFrom(modelClass)) {
             var useList = list
-            if (useList == null)
-                try {
-                    val conClass = Class.forName("com.iffly.compose.libredux.ReduxListContainer")
-                    val constructor = conClass.getDeclaredConstructor()
-                    constructor.isAccessible = true
-                    val container = constructor.newInstance()
-                    val listField = conClass.getDeclaredField("reducerList")
-                    listField.isAccessible = true
-                    useList = listField.get(container) as List<Reducer<out Any, out Any>>?
-
-                } catch (e: Exception) {
-                    Log.i("myyf", "$e")
-                }
+//            if (useList == null)
+//                try {
+//                    val conClass = Class.forName("com.iffly.compose.libredux.ReduxListContainer")
+//                    val constructor = conClass.getDeclaredConstructor()
+//                    constructor.isAccessible = true
+//                    val container = constructor.newInstance()
+//                    val listField = conClass.getDeclaredField("reducerList")
+//                    listField.isAccessible = true
+//                    useList = listField.get(container) as List<Reducer<out Any, out Any>>?
+//
+//                } catch (e: Exception) {
+//                    Log.i("myyf", "$e")
+//                }
 
             return StoreViewModel(
                 list = useList!! as List<Reducer<Any, Any>>,

@@ -1,4 +1,4 @@
-package com.iffly.compose.redux.ui
+package com.iffly.compose.redux
 
 import com.iffly.compose.libredux.Reducer
 import kotlinx.coroutines.Dispatchers

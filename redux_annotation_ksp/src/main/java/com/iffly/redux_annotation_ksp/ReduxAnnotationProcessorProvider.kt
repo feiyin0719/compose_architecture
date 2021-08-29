@@ -7,7 +7,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 @AutoService(SymbolProcessorProvider::class)
 class ReduxAnnotationProcessorProvider:SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        return AnnotationProcessor(environment)
+        return ReduxAnnotationProcessor(environment)
     }
 
 
