@@ -83,7 +83,7 @@ class ReduxAnnotationProcessor(val environment: SymbolProcessorEnvironment) : Sy
                 }.map {
                     it.second
                 }
-                val packageName = "com.iffly.compose.libredux"
+                val packageName = "com.iffly.compose.libredux.container"
                 val containerClassName = "ReduxListContainer"
                 val reducersVarName = "reducers"
                 val middleWareVarName = "middleWares"

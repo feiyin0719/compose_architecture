@@ -1,8 +1,11 @@
 package com.iffly.compose.redux
 
 import com.iffly.compose.libredux.Reducer
+import dagger.hilt.android.scopes.ActivityRetainedScoped
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
+import javax.inject.Inject
 
 
 data class CountAction(val type: CountActionType, val data: Int) {
@@ -27,7 +30,8 @@ data class CountState(val count: Int = 1) {
 }
 
 @com.iffly.redux.annotation.Reducer
-class CountReducer :
+@ViewModelScoped
+class CountReducer @Inject constructor():
     Reducer<CountState, CountAction>(CountState::class.java, CountAction::class.java) {
     override fun reduce(
         countState: CountState,
@@ -52,7 +56,8 @@ data class CountFloatAction(val type: CountFloatActionType) {
     }
 }
 @com.iffly.redux.annotation.Reducer
-class CountFloatReducer : Reducer<CountFloatState, CountFloatAction>(
+@ViewModelScoped
+class CountFloatReducer @Inject constructor() : Reducer<CountFloatState, CountFloatAction>(
     CountFloatState::class.java,
     CountFloatAction::class.java
 ) {

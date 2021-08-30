@@ -1,10 +1,12 @@
 package com.iffly.compose.redux
 
+
 import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -13,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.iffly.compose.Content1
 import com.iffly.compose.Content2
 import com.iffly.compose.libredux.*
+import com.iffly.compose.mvvm.viewModelOfNav
 
 @com.iffly.redux.annotation.MiddleWare(3)
 class TestMiddleWare1 : MiddleWare {
@@ -46,6 +49,7 @@ class FunctionActionMiddleWare : MiddleWare {
         }
     }
 }
+
 @com.iffly.redux.annotation.MiddleWare(2)
 class TestMiddleWare2 : MiddleWare {
 
@@ -61,14 +65,18 @@ class TestMiddleWare2 : MiddleWare {
 
 @Composable
 fun ReduxApp() {
-    val s = storeViewModelInit()
+    val s: StoreViewModel = viewModel()
+    var init by remember {
+        mutableStateOf(false)
+    }
     LaunchedEffect(key1 = true) {
         s.depState(DepState.Companion::transform)
         s.depState(DepState2.Companion::transform)
-
+        Log.e("myyf", "dep")
+        init = true
     }
-
-    NavGraph()
+    if (init)
+        NavGraph()
 }
 
 
@@ -92,7 +100,8 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
 fun Screen1(
     navController: NavController
 ) {
-    val s = storeViewModel()
+    val s: StoreViewModel =
+        viewModel(viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner)
     val state: CountState by s.getState(CountState::class.java)
         .observeAsState(CountState(1))
     val depState: DepState by s.getState(DepState::class.java).observeAsState(DepState())
@@ -100,14 +109,14 @@ fun Screen1(
     Content1(count = state.count, depCount = depState.depCount, depCount2 = depState2.depCount,
         { navController.navigate("screen2") }
     ) {
-//        s.dispatch(CountAction addWith 1)
-        val i =
-            s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
-                storeDispatch.dispatch(CountAction addWith 1)
-                storeDispatch.dispatch(CountAction addWith 1)
-                1
-            })
-        Log.i("myyf", "$i")
+        s.dispatch(CountAction addWith 1)
+//        val i =
+//            s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
+//                storeDispatch.dispatch(CountAction addWith 1)
+//                storeDispatch.dispatch(CountAction addWith 1)
+//                1
+//            })
+//        Log.i("myyf", "$i")
     }
 
 }
@@ -115,7 +124,7 @@ fun Screen1(
 
 @Composable
 fun Screen2(navController: NavController) {
-    val s = storeViewModel()
+    val s: StoreViewModel = viewModelOfNav(navController = navController)
     val state: CountState by s.getState(CountState::class.java)
         .observeAsState(CountState(1))
     Content2(count = state.count) {

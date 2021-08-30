@@ -5,14 +5,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.multibindings.StringKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import javax.inject.Inject
 
-class StoreViewModel(
+@HiltViewModel
+class StoreViewModel @Inject constructor(
     private val list: List<Reducer<Any, Any>>,
     middleWares: List<MiddleWare> = emptyList()
 ) : StoreDispatch, StoreState, MiddleWareDispatch, ViewModel() {

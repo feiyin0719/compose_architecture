@@ -3,8 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     kotlin("kapt")
+    id("dagger.hilt.android.plugin")
 }
 val compose_version = "1.0.0"
+val hiltVersion = "2.38.1"
 android {
 
     compileSdk = 31
@@ -82,6 +84,11 @@ dependencies {
     implementation( project( ":libredux"))
     implementation( project( ":libScopeViewModel"))
     implementation( project( ":reduxannotation"))
+    implementation ("com.google.dagger:hilt-android:$hiltVersion")
+    kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
+    implementation ("androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03")
+    // When using Kotlin.
+    kapt ("androidx.hilt:hilt-compiler:1.0.0")
     ksp(project(":redux_annotation_ksp"))
     implementation( "androidx.appcompat:appcompat:1.3.1")
     implementation( "com.google.android.material:material:1.4.0")
