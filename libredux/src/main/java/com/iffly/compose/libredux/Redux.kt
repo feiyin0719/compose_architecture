@@ -14,10 +14,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
+import java.util.Set
 
 @HiltViewModel
 class StoreViewModel @Inject constructor(
-    private val list: List<Reducer<Any, Any>>,
+    private val list: Set<Reducer<Any, Any>>,
     middleWares: List<MiddleWare> = emptyList()
 ) : StoreDispatch, StoreState, MiddleWareDispatch, ViewModel() {
     private val _reducerMap = mutableMapOf<Class<Any>, Channel<Any>>()
@@ -166,7 +167,7 @@ class StoreViewModelFactory(
 //                }
 
             return StoreViewModel(
-                list = useList!! as List<Reducer<Any, Any>>,
+                list = emptySet<Reducer<Any,Any>>() as Set<Reducer<Any,Any>>,
                 middleWares ?: emptyList()
             ) as T
         }

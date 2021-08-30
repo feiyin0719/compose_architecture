@@ -8,24 +8,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.scopes.ViewModelScoped
+import dagger.multibindings.IntoSet
 import java.util.List
 
 @Module
 @InstallIn(ViewModelComponent::class)
-object ReducerModule {
+object ReduxModule {
 
-
-    @Provides
-    @ViewModelScoped
-    fun provideReducers(
-        countReducer: CountReducer,
-        countFloatReducer: CountFloatReducer
-    ): List<out Reducer<Any, Any>> {
-        return listOf<Reducer<out Any, out Any>>(
-            countReducer,
-            countFloatReducer
-        ) as List<Reducer<Any, Any>>
-    }
 
     @Provides
     @ViewModelScoped
@@ -40,4 +29,20 @@ object ReducerModule {
             testMiddleWare2
         ) as List<MiddleWare>
     }
+
+    @Provides
+    @IntoSet
+    @ViewModelScoped
+    fun provideCountReducer(countReducer: CountReducer): Reducer<Any, Any> =
+        countReducer as Reducer<Any, Any>
+
+}
+
+@Module
+@InstallIn(ViewModelComponent::class)
+object ReducerModule {
+    @Provides
+    @IntoSet
+    fun provideCountFloatReducer(countFloatReducer: CountFloatReducer): Reducer<Any, Any> =
+        countFloatReducer as Reducer<Any, Any>
 }
