@@ -16,9 +16,12 @@ import com.iffly.compose.Content1
 import com.iffly.compose.Content2
 import com.iffly.compose.libredux.*
 import com.iffly.compose.mvvm.viewModelOfNav
+import dagger.hilt.android.scopes.ViewModelScoped
+import javax.inject.Inject
 
 @com.iffly.redux.annotation.MiddleWare(3)
-class TestMiddleWare1 : MiddleWare {
+@ViewModelScoped
+class TestMiddleWare1 @Inject constructor() : MiddleWare {
 
     override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
         return { next: MiddleWareDispatch ->
@@ -31,7 +34,8 @@ class TestMiddleWare1 : MiddleWare {
 }
 
 @com.iffly.redux.annotation.MiddleWare(1)
-class FunctionActionMiddleWare : MiddleWare {
+@ViewModelScoped
+class FunctionActionMiddleWare@Inject constructor() : MiddleWare {
 
     fun interface FunctionAction {
         suspend operator fun invoke(dispatchAction: StoreDispatch, state: StoreState): Any?
@@ -51,7 +55,8 @@ class FunctionActionMiddleWare : MiddleWare {
 }
 
 @com.iffly.redux.annotation.MiddleWare(2)
-class TestMiddleWare2 : MiddleWare {
+@ViewModelScoped
+class TestMiddleWare2@Inject constructor() : MiddleWare {
 
     override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
         return { next: MiddleWareDispatch ->
@@ -109,14 +114,14 @@ fun Screen1(
     Content1(count = state.count, depCount = depState.depCount, depCount2 = depState2.depCount,
         { navController.navigate("screen2") }
     ) {
-        s.dispatch(CountAction addWith 1)
-//        val i =
-//            s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
-//                storeDispatch.dispatch(CountAction addWith 1)
-//                storeDispatch.dispatch(CountAction addWith 1)
-//                1
-//            })
-//        Log.i("myyf", "$i")
+//        s.dispatch(CountAction addWith 1)
+        val i =
+            s.dispatch(FunctionActionMiddleWare.FunctionAction { storeDispatch: StoreDispatch, _: StoreState ->
+                storeDispatch.dispatch(CountAction addWith 1)
+                storeDispatch.dispatch(CountAction addWith 1)
+                1
+            })
+        Log.i("myyf", "$i")
     }
 
 }

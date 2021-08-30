@@ -29,7 +29,15 @@ object ReducerModule {
 
     @Provides
     @ViewModelScoped
-    fun provideMiddlewares(): List<out MiddleWare> {
-        return listOf<MiddleWare>() as List<MiddleWare>
+    fun provideMiddlewares(
+        testMiddleWare1: TestMiddleWare1,
+        testMiddleWare2: TestMiddleWare2,
+        functionActionMiddleWare: FunctionActionMiddleWare
+    ): List<out MiddleWare> {
+        return listOf<MiddleWare>(
+            testMiddleWare1,
+            functionActionMiddleWare,
+            testMiddleWare2
+        ) as List<MiddleWare>
     }
 }
