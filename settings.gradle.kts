@@ -7,8 +7,8 @@ pluginManagement {
     plugins {
         id("com.android.application") version "7.1.0"
         id("com.android.library") version "7.1.0"
-        id("org.jetbrains.kotlin.android") version "1.5.10"
-        id("com.google.devtools.ksp") version "1.5.10-1.0.0-beta01" apply false
+        id("org.jetbrains.kotlin.android") version "1.5.21"
+        id("com.google.devtools.ksp") version "1.5.21-1.0.0-beta05" apply false
     }
 }
 dependencyResolutionManagement {
@@ -18,7 +18,7 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "compose_redux"
+rootProject.name = "compose_architecture"
 include(":app")
 include(":libredux")
 include(":libScopeViewModel")

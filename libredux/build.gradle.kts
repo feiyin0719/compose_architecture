@@ -1,25 +1,26 @@
+import com.iffly.compose.buildsrc.Libs
+import com.iffly.compose.buildsrc.Versions
+
 plugins {
-    id ("com.android.library")
-    id ("org.jetbrains.kotlin.android")
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
 //    id "maven-publish"
 }
 
-val compose_version = "1.0.0"
-val hiltVersion = "2.38.1"
+
 android {
 
-    compileSdk = 31
-    buildToolsVersion = "31.0.0"
+    compileSdk = Versions.targetVersion
+    buildToolsVersion = Versions.buildToolVersion
 
     defaultConfig {
 
-        minSdk =  21
-        targetSdk =  31
+        minSdk = Versions.minVersion
+        targetSdk = Versions.targetVersion
 
-
-        testInstrumentationRunner =  "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -27,7 +28,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled =  false
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -39,35 +40,34 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = Versions.jvmTarget
     }
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = compose_version
+        kotlinCompilerExtensionVersion = Libs.AndroidX.Compose.version
     }
 }
 dependencies {
 
-    implementation( "androidx.core:core-ktx:1.6.0")
-    implementation ("androidx.compose.ui:ui:1.0.0")
-    implementation("androidx.compose.material:material:1.0.0")
-    implementation ("androidx.compose.ui:ui-tooling-preview:1.0.0")
-    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.3.1")
-    implementation ("androidx.activity:activity-compose:1.3.1")
-    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07")
-    implementation( "androidx.navigation:navigation-compose:2.4.0-alpha07")
-    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.2.0")
-    implementation ("androidx.compose.runtime:runtime-livedata:1.0.0")
-    implementation ("com.google.dagger:hilt-android:$hiltVersion")
-    kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
-    implementation ("androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03")
+
+    implementation(Libs.AndroidX.coreKtx)
+    implementation(Libs.AndroidX.Compose.ui)
+    implementation(Libs.AndroidX.Lifecycle.runtimeKtx)
+    implementation(Libs.AndroidX.Activity.activityCompose)
+    implementation(Libs.AndroidX.Lifecycle.viewModelCompose)
+    implementation(Libs.AndroidX.LiveData.liveDataKtx)
+    implementation(Libs.AndroidX.Compose.liveData)
+    implementation(Libs.AndroidX.Activity.activityKtx)
+    implementation(Libs.AndroidX.Hilt.hiltAndroid)
+    kapt(Libs.AndroidX.Hilt.hiltAndroidCompile)
+    implementation(Libs.AndroidX.Hilt.hiltViewModel)
     // When using Kotlin.
-    kapt ("androidx.hilt:hilt-compiler:1.0.0")
-    testImplementation ("junit:junit:4.+")
-    androidTestImplementation ("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation ("androidx.test.espresso:espresso-core:3.4.0")
+    kapt(Libs.AndroidX.Hilt.hiltCompile)
+
+    testImplementation(Libs.JUnit.junit)
+
 }
 
 

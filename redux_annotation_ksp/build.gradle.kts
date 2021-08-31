@@ -1,4 +1,4 @@
-val kspVersion:String = "1.5.10-1.0.0-beta01"
+val kspVersion:String = "1.5.21-1.0.0-beta05"
 
 plugins {
     id("java-library")
