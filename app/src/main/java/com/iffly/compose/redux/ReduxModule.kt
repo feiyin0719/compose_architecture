@@ -13,8 +13,7 @@ import java.util.List
 
 @Module
 @InstallIn(ViewModelComponent::class)
-object ReduxModule {
-
+object MiddleWareModule {
 
     @Provides
     @ViewModelScoped
@@ -23,26 +22,33 @@ object ReduxModule {
         testMiddleWare2: TestMiddleWare2,
         functionActionMiddleWare: FunctionActionMiddleWare
     ): List<out MiddleWare> {
-        return listOf<MiddleWare>(
+        return listOf(
             testMiddleWare1,
             functionActionMiddleWare,
             testMiddleWare2
-        ) as List<MiddleWare>
+        ) as List<out MiddleWare>
     }
 
-    @Provides
-    @IntoSet
-    @ViewModelScoped
-    fun provideCountReducer(countReducer: CountReducer): Reducer<Any, Any> =
-        countReducer as Reducer<Any, Any>
 
 }
 
 @Module
 @InstallIn(ViewModelComponent::class)
-object ReducerModule {
+object CountReducerModule {
     @Provides
     @IntoSet
+    @ViewModelScoped
+    fun provideCountReducer(countReducer: CountReducer): Reducer<Any, Any> =
+        countReducer as Reducer<Any, Any>
+}
+
+
+@Module
+@InstallIn(ViewModelComponent::class)
+object CountFloatReducerModule {
+    @Provides
+    @IntoSet
+    @ViewModelScoped
     fun provideCountFloatReducer(countFloatReducer: CountFloatReducer): Reducer<Any, Any> =
         countFloatReducer as Reducer<Any, Any>
 }

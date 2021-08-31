@@ -4,9 +4,6 @@ package com.iffly.compose.redux
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -15,7 +12,6 @@ import androidx.navigation.compose.rememberNavController
 import com.iffly.compose.Content1
 import com.iffly.compose.Content2
 import com.iffly.compose.libredux.*
-import com.iffly.compose.mvvm.viewModelOfNav
 import dagger.hilt.android.scopes.ViewModelScoped
 import javax.inject.Inject
 
@@ -35,7 +31,7 @@ class TestMiddleWare1 @Inject constructor() : MiddleWare {
 
 @com.iffly.redux.annotation.MiddleWare(1)
 @ViewModelScoped
-class FunctionActionMiddleWare@Inject constructor() : MiddleWare {
+class FunctionActionMiddleWare @Inject constructor() : MiddleWare {
 
     fun interface FunctionAction {
         suspend operator fun invoke(dispatchAction: StoreDispatch, state: StoreState): Any?
@@ -56,7 +52,7 @@ class FunctionActionMiddleWare@Inject constructor() : MiddleWare {
 
 @com.iffly.redux.annotation.MiddleWare(2)
 @ViewModelScoped
-class TestMiddleWare2@Inject constructor() : MiddleWare {
+class TestMiddleWare2 @Inject constructor() : MiddleWare {
 
     override suspend fun invoke(store: StoreViewModel): (MiddleWareDispatch) -> MiddleWareDispatch {
         return { next: MiddleWareDispatch ->
@@ -70,7 +66,7 @@ class TestMiddleWare2@Inject constructor() : MiddleWare {
 
 @Composable
 fun ReduxApp() {
-    val s: StoreViewModel = viewModel()
+    val s: StoreViewModel = hiltStoreViewModel()
     var init by remember {
         mutableStateOf(false)
     }
@@ -106,7 +102,7 @@ fun Screen1(
     navController: NavController
 ) {
     val s: StoreViewModel =
-        viewModel(viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner)
+        hiltStoreViewModel()
     val state: CountState by s.getState(CountState::class.java)
         .observeAsState(CountState(1))
     val depState: DepState by s.getState(DepState::class.java).observeAsState(DepState())
@@ -129,7 +125,7 @@ fun Screen1(
 
 @Composable
 fun Screen2(navController: NavController) {
-    val s: StoreViewModel = viewModelOfNav(navController = navController)
+    val s: StoreViewModel = hiltStoreViewModel()
     val state: CountState by s.getState(CountState::class.java)
         .observeAsState(CountState(1))
     Content2(count = state.count) {

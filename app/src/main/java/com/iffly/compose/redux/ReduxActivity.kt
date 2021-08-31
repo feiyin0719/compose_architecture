@@ -13,4 +13,8 @@ class ReduxActivity : ComponentActivity() {
             ReduxApp()
         }
     }
+
+    fun test(){
+
+    }
 }

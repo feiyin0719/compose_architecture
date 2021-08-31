@@ -156,7 +156,7 @@ class ReduxAnnotationProcessor(val environment: SymbolProcessorEnvironment) : Sy
                 ).addAnnotation(composeAnnotationType)
                     .addModifiers(KModifier.PUBLIC)
                     .addStatement(
-                        "return %M(list = %M, middleWares = %M)",
+                        "return %M( %M, %M )",
                         storeViewModelMemberName,
                         reducerMemberName,
                         middleWareMemberName

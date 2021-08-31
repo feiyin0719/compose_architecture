@@ -1,24 +1,22 @@
 package com.iffly.compose.libredux
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.multibindings.StringKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import javax.inject.Inject
 import java.util.Set
+import javax.inject.Inject
 
 @HiltViewModel
 class StoreViewModel @Inject constructor(
-    private val list: Set<Reducer<Any, Any>>,
+    private val reducers: Set<Reducer<Any, Any>>,
     middleWares: List<MiddleWare> = emptyList()
 ) : StoreDispatch, StoreState, MiddleWareDispatch, ViewModel() {
     private val _reducerMap = mutableMapOf<Class<Any>, Channel<Any>>()
@@ -36,7 +34,7 @@ class StoreViewModel @Inject constructor(
                 middleWareDispatchHead = it(middleWareDispatchHead)
             }
 
-            list.forEach {
+            reducers.forEach {
                 if (_reducerMap.containsKey(it.actionClass))
                     throw IllegalStateException("The  ${it.actionClass} action cannot register twice")
                 _reducerMap[it.actionClass] = Channel(Channel.UNLIMITED)
@@ -145,13 +143,13 @@ fun interface MiddleWare {
 
 
 class StoreViewModelFactory(
-    val list: List<Reducer<out Any, out Any>>?,
+    val reducers: List<Reducer<out Any, out Any>>?,
     val middleWares: List<MiddleWare>?
 ) :
     ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (StoreViewModel::class.java.isAssignableFrom(modelClass)) {
-            var useList = list
+
 //            if (useList == null)
 //                try {
 //                    val conClass = Class.forName("com.iffly.compose.libredux.ReduxListContainer")
@@ -167,7 +165,7 @@ class StoreViewModelFactory(
 //                }
 
             return StoreViewModel(
-                list = emptySet<Reducer<Any,Any>>() as Set<Reducer<Any,Any>>,
+                reducers = reducers!!.toSet() as Set<Reducer<Any, Any>>,
                 middleWares ?: emptyList()
             ) as T
         }
@@ -178,7 +176,7 @@ class StoreViewModelFactory(
 
 @Composable
 fun storeViewModel(
-    list: List<Reducer<out Any, out Any>>? = null,
+    reducers: List<Reducer<out Any, out Any>>? = null,
     middleWares: List<MiddleWare>? = null,
     viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalContext.current as ViewModelStoreOwner) {
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
@@ -186,6 +184,13 @@ fun storeViewModel(
 ): StoreViewModel =
     viewModel(
         StoreViewModel::class.java,
-        factory = StoreViewModelFactory(list = list, middleWares = middleWares),
+        factory = StoreViewModelFactory(reducers = reducers, middleWares = middleWares),
         viewModelStoreOwner = viewModelStoreOwner
     )
+
+@Composable
+fun hiltStoreViewModel(
+    viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalContext.current as ViewModelStoreOwner) {
+        "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
+    }
+) = viewModel(StoreViewModel::class.java, viewModelStoreOwner = viewModelStoreOwner)
